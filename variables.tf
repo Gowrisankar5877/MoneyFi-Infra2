@@ -41,3 +41,31 @@ variable "sql_database_name" {
   default     = "moneyfi_db"
 }
 
+
+variable "key_vault_name" {
+  description = "Name of the Azure Key Vault"
+  type        = string
+  default     = "moneyfikeyvault"
+}
+
+variable "database_name" {
+  description = "Name of the database"
+  type        = string
+}
+
+variable "database_url" {
+  description = "Database connection URL"
+  type        = string
+}
+
+variable "database_user" {
+  description = "Database user"
+  type        = string
+}
+
+variable "database_password" {
+  description = "Database password"
+  type        = string
+  sensitive   = true
+}
+
