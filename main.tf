@@ -208,7 +208,8 @@ resource "azurerm_kubernetes_cluster" "aks_central" {
   private_cluster_enabled = true
 
    key_vault_secrets_provider {
-    enabled = true
+    secret_rotation_enabled  = true
+    secret_rotation_interval = "2m"
   }
 
   network_profile {
@@ -261,7 +262,8 @@ resource "azurerm_kubernetes_cluster" "aks_west" {
   private_cluster_enabled = true
 
    key_vault_secrets_provider {
-    enabled = true
+    secret_rotation_enabled  = true
+    secret_rotation_interval = "2m"
   }
 
   network_profile {
