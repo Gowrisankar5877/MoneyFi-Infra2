@@ -296,3 +296,70 @@ resource "azurerm_container_registry" "acr" {
 
 }
 
+
+
+# -------------------------
+# Azure SQL Server & DB
+# -------------------------
+
+resource "azurerm_mssql_server" "sql" {
+  name                         = var.sql_server_name
+  resource_group_name          = azurerm_resource_group.example.name
+  location                     = azurerm_resource_group.example.location
+  version                      = "12.0"
+  administrator_login          = var.sql_admin_username
+  administrator_login_password = var.sql_admin_password
+  public_network_access_enabled = false
+  minimum_tls_version          = "1.2"
+}
+
+resource "azurerm_mssql_database" "db" {
+  name           = var.sql_database_name
+  server_id      = azurerm_mssql_server.sql.id
+  collation      = "SQL_Latin1_General_CP1_CI_AS"
+  sku_name       = "Basic"
+  max_size_gb    = 10
+}
+
+
+# -------------------------
+# Private Endpoints in All 4 Subnets
+# -------------------------
+
+locals {
+  sql_pe_subnets = [
+    azurerm_subnet.subnet1_central,
+    azurerm_subnet.subnet2_central,
+    azurerm_subnet.subnet1_west,
+    azurerm_subnet.subnet2_west,
+  ]
+}
+
+resource "azurerm_private_endpoint" "sql_pe" {
+  count               = length(local.sql_pe_subnets)
+  name                = "sql-pe-${count.index + 1}"
+  location            = azurerm_resource_group.example.location
+  resource_group_name = azurerm_resource_group.example.name
+  subnet_id           = local.sql_pe_subnets[count.index].id
+
+  private_service_connection {
+    name                           = "sql-priv-conn-${count.index + 1}"
+    private_connection_resource_id = azurerm_mssql_server.sql.id
+    subresource_names              = ["sqlServer"]
+    is_manual_connection           = false
+  }
+
+  private_dns_zone_group {
+    name                 = "sql-dns-zone-group"
+    private_dns_zone_ids = [azurerm_private_dns_zone.sql.id]
+  }
+
+  depends_on = [
+    azurerm_mssql_server.sql,
+    azurerm_private_dns_zone.sql
+  ]
+}
+
+
+
+
