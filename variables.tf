@@ -7,12 +7,12 @@ variable "resource_group_name" {
 variable "location" {
   description = "The Azure region where the resource group will be created"
   type        = string
-  default     = "australiaeast"
+  default     = "canadacentral"
 }
 
 
 variable "secondary_location" {
   description = "The second region for the second VNet"
   type        = string
-  default     = "japanwest"
+  default     = "australiasoutheast"
 }
