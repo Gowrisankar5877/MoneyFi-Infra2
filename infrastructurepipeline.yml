@@ -1,0 +1,52 @@
+trigger:
+  - main 
+
+resources:
+  - repo: self
+
+variables:
+  poolname: agentpool
+  vmImageName: 'gowriAM'
+  terraformWorkingDir: '.' 
+  azureSubscription: '9d2931f3-e261-4c38-a081-22cd6b3df6e8'
+  
+stages:
+- stage: Terraform_Infra
+  displayName: "Provision Infrastructure"
+  jobs:
+  - job: Terraform
+    displayName: "Terraform Plan & Apply"
+    pool:
+      name: $(poolname)
+      vmImage: $(vmImageName)
+    steps:
+    - checkout: self
+
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: $(azureSubscription)
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          echo "Logged into Azure"
+
+    - script: |
+        cd $(terraformWorkingDir)
+        terraform version
+      displayName: 'Check Terraform Version'
+
+    - script: |
+        cd $(terraformWorkingDir)
+        terraform init
+      displayName: 'Terraform Init '
+
+    - script: |
+        cd $(terraformWorkingDir)
+        terraform plan   -out=tfplan
+      displayName: 'Terraform Plan'
+
+    - script: |
+        cd $(terraformWorkingDir)
+        terraform apply   -auto-approve tfplan
+      displayName: 'Terraform Apply'
+    
