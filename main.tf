@@ -359,6 +359,7 @@ resource "azurerm_private_endpoint" "sql_pe" {
     name                           = "moneyfi-sql-pe-conn"
     private_connection_resource_id = azurerm_mssql_server.sql.id
     subresource_names              = ["sqlServer"]
+    is_manual_connection = false
   }
 
   private_dns_zone_group {
