@@ -282,3 +282,17 @@ resource "azurerm_kubernetes_cluster_node_pool" "west_np2" {
     azurerm_subnet_network_security_group_association.assoc_subnet2_west
   ]
 }
+
+#-----------------------------------
+# ACR CREATION 
+#-----------------------------------
+
+resource "azurerm_container_registry" "acr" {
+  name                = "moneyfiacr"  
+  resource_group_name = azurerm_resource_group.example.name
+  location            = azurerm_resource_group.example.location
+  sku                 = "Standard"
+  admin_enabled       = true
+
+}
+
