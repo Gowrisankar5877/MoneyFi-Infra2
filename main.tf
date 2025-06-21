@@ -207,10 +207,8 @@ resource "azurerm_kubernetes_cluster" "aks_central" {
 
   private_cluster_enabled = true
 
-   addon_profile {
-    azure_key_vault_secrets_provider {
-      enabled = true
-    }
+   key_vault_secrets_provider {
+    enabled = true
   }
 
   network_profile {
@@ -262,10 +260,8 @@ resource "azurerm_kubernetes_cluster" "aks_west" {
 
   private_cluster_enabled = true
 
-   addon_profile {
-    azure_key_vault_secrets_provider {
-      enabled = true
-    }
+   key_vault_secrets_provider {
+    enabled = true
   }
 
   network_profile {
@@ -502,6 +498,7 @@ resource "azurerm_key_vault_secret" "db_password" {
 
 #------PERMISSION FOR AKS----------
 #----------------------------------
+
 resource "azurerm_key_vault_access_policy" "aks_central_kv_access" {
   key_vault_id = azurerm_key_vault.kv.id
   tenant_id    = data.azurerm_client_config.current.tenant_id
