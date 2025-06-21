@@ -207,6 +207,12 @@ resource "azurerm_kubernetes_cluster" "aks_central" {
 
   private_cluster_enabled = true
 
+   addon_profile {
+    azure_key_vault_secrets_provider {
+      enabled = true
+    }
+  }
+
   network_profile {
     network_plugin      = "azure"
     network_policy      = "azure"
@@ -255,6 +261,12 @@ resource "azurerm_kubernetes_cluster" "aks_west" {
   }
 
   private_cluster_enabled = true
+
+   addon_profile {
+    azure_key_vault_secrets_provider {
+      enabled = true
+    }
+  }
 
   network_profile {
     network_plugin      = "azure"
@@ -488,5 +500,29 @@ resource "azurerm_key_vault_secret" "db_password" {
   key_vault_id = azurerm_key_vault.kv.id
 }
 
+#------PERMISSION FOR AKS----------
+#----------------------------------
+resource "azurerm_key_vault_access_policy" "aks_central_kv_access" {
+  key_vault_id = azurerm_key_vault.kv.id
+  tenant_id    = data.azurerm_client_config.current.tenant_id
+  object_id    = azurerm_kubernetes_cluster.aks_central.identity[0].principal_id
+
+  secret_permissions = [
+    "Get",
+    "List"
+  ]
+}
+
+
+resource "azurerm_key_vault_access_policy" "aks_west_kv_access" {
+  key_vault_id = azurerm_key_vault.kv.id
+  tenant_id    = data.azurerm_client_config.current.tenant_id
+  object_id    = azurerm_kubernetes_cluster.aks_west.identity[0].principal_id
+
+  secret_permissions = [
+    "Get",
+    "List"
+  ]
+}
 
 
