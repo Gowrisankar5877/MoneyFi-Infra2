@@ -36,14 +36,23 @@ resource "azurerm_subnet" "subnet1_central" {
   resource_group_name  = azurerm_resource_group.example.name
   virtual_network_name = azurerm_virtual_network.vnet_central.name
   address_prefixes     = ["10.10.1.0/24"]
+}
+
+resource "azurerm_subnet_network_security_group_association" "assoc_subnet1_central" {
+  subnet_id                 = azurerm_subnet.subnet1_central.id
   network_security_group_id = azurerm_network_security_group.nsg_private.id
 }
+
 
 resource "azurerm_subnet" "subnet2_central" {
   name                 = "MoneyFi-V1S2"
   resource_group_name  = azurerm_resource_group.example.name
   virtual_network_name = azurerm_virtual_network.vnet_central.name
   address_prefixes     = ["10.10.2.0/24"]
+}
+
+resource "azurerm_subnet_network_security_group_association" "assoc_subnet2_central" {
+  subnet_id                 = azurerm_subnet.subnet2_central.id
   network_security_group_id = azurerm_network_security_group.nsg_private.id
 }
 
@@ -62,14 +71,22 @@ resource "azurerm_subnet" "subnet1_west" {
   resource_group_name  = azurerm_resource_group.example.name
   virtual_network_name = azurerm_virtual_network.vnet_west.name
   address_prefixes     = ["10.20.1.0/24"]
+}
+resource "azurerm_subnet_network_security_group_association" "assoc_subnet1_west" {
+  subnet_id                 = azurerm_subnet.subnet1_west.id
   network_security_group_id = azurerm_network_security_group.nsg_private.id
 }
+
 
 resource "azurerm_subnet" "subnet2_west" {
   name                 = "MoneyFi-V2S2"
   resource_group_name  = azurerm_resource_group.example.name
   virtual_network_name = azurerm_virtual_network.vnet_west.name
   address_prefixes     = ["10.20.2.0/24"]
+}
+
+resource "azurerm_subnet_network_security_group_association" "assoc_subnet2_west" {
+  subnet_id                 = azurerm_subnet.subnet2_west.id
   network_security_group_id = azurerm_network_security_group.nsg_private.id
 }
 
