@@ -431,6 +431,62 @@ resource "azurerm_virtual_network_peering" "pe_to_west" {
 }
 
 
+# -------------------------
+# Azure Key Vault
+# -------------------------
+
+resource "azurerm_key_vault" "kv" {
+  name                        = var.key_vault_name
+  location                    = azurerm_resource_group.example.location
+  resource_group_name         = azurerm_resource_group.example.name
+  tenant_id                   = data.azurerm_client_config.current.tenant_id
+  sku_name                    = "standard"
+  purge_protection_enabled    = true
+  soft_delete_enabled         = true
+
+  access_policy {
+    tenant_id = data.azurerm_client_config.current.tenant_id
+    object_id = data.azurerm_client_config.current.object_id
+
+    secret_permissions = [
+      "Set",
+      "Get",
+      "List",
+      "Delete",
+    ]
+  }
+
+  depends_on = [azurerm_resource_group.example]
+}
+
+data "azurerm_client_config" "current" {}
+
+# -------------------------
+# Key Vault Secrets
+# -------------------------
+resource "azurerm_key_vault_secret" "db_name" {
+  name         = "databasename"
+  value        = var.database_name
+  key_vault_id = azurerm_key_vault.kv.id
+}
+
+resource "azurerm_key_vault_secret" "db_url" {
+  name         = "databaseurl"
+  value        = var.database_url
+  key_vault_id = azurerm_key_vault.kv.id
+}
+
+resource "azurerm_key_vault_secret" "db_user" {
+  name         = "dbuser"
+  value        = var.database_user
+  key_vault_id = azurerm_key_vault.kv.id
+}
+
+resource "azurerm_key_vault_secret" "db_password" {
+  name         = "dbpassword"
+  value        = var.database_password
+  key_vault_id = azurerm_key_vault.kv.id
+}
 
 
 

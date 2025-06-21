@@ -1,1 +1,5 @@
 sql_admin_password = "Pp@029833"
+database_url = "jdbc:sqlserver://moneyfisqlserver.database.windows.net:1433"
+database_user = "gowri@moneyfisqlserver"
+database_password = "Pp@029833"
+databasename = "moneyfi_db"
