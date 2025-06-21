@@ -42,7 +42,7 @@ stages:
 
     - script: |
         cd $(terraformWorkingDir)
-        terraform plan -var-file="terraform.tfvars" -auto-approve  -out=tfplan
+        terraform plan -var-file="terraform.tfvars" -out=tfplan
       displayName: 'Terraform Plan'
 
     - script: |
