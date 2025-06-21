@@ -335,6 +335,28 @@ locals {
   ]
 }
 
+resource "azurerm_private_dns_zone" "sql" {
+  name                = "privatelink.database.windows.net"
+  resource_group_name = azurerm_resource_group.example.name
+}
+
+resource "azurerm_private_dns_zone_virtual_network_link" "link_central" {
+  name                  = "sql-dns-link-central"
+  resource_group_name   = azurerm_resource_group.example.name
+  private_dns_zone_name = azurerm_private_dns_zone.sql.name
+  virtual_network_id    = azurerm_virtual_network.vnet_central.id
+  registration_enabled  = false
+}
+
+resource "azurerm_private_dns_zone_virtual_network_link" "link_west" {
+  name                  = "sql-dns-link-west"
+  resource_group_name   = azurerm_resource_group.example.name
+  private_dns_zone_name = azurerm_private_dns_zone.sql.name
+  virtual_network_id    = azurerm_virtual_network.vnet_west.id
+  registration_enabled  = false
+}
+
+
 resource "azurerm_private_endpoint" "sql_pe" {
   count               = length(local.sql_pe_subnets)
   name                = "sql-pe-${count.index + 1}"
