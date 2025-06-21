@@ -321,28 +321,58 @@ resource "azurerm_mssql_database" "db" {
   max_size_gb    = 10
 }
 
-
 # -------------------------
-# Private Endpoints in All 4 Subnets
+# Small VNet in Australia East for Private Endpoint
 # -------------------------
-
-locals {
-  sql_pe_subnets = [
-    azurerm_subnet.subnet1_central,
-    azurerm_subnet.subnet2_central,
-    azurerm_subnet.subnet1_west,
-    azurerm_subnet.subnet2_west,
-  ]
+resource "azurerm_virtual_network" "pe_vnet" {
+  name                = "moneyfi-pe-vnet"
+  address_space       = ["10.100.0.0/16"]
+  location            = var.location
+  resource_group_name = var.resource_group_name
 }
 
+resource "azurerm_subnet" "pe_subnet" {
+  name                 = "moneyfi-pe-subnet"
+  resource_group_name  = var.resource_group_name
+  virtual_network_name = azurerm_virtual_network.pe_vnet.name
+  address_prefixes     = ["10.100.1.0/24"]
+}
+
+# -------------------------
+# Private DNS Zone
+# -------------------------
 resource "azurerm_private_dns_zone" "sql" {
   name                = "privatelink.database.windows.net"
-  resource_group_name = azurerm_resource_group.example.name
+  resource_group_name = var.resource_group_name
 }
 
+# -------------------------
+# Private Endpoint
+# -------------------------
+resource "azurerm_private_endpoint" "sql_pe" {
+  name                = "moneyfi-sql-pe"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  subnet_id           = azurerm_subnet.pe_subnet.id
+
+  private_service_connection {
+    name                           = "moneyfi-sql-pe-conn"
+    private_connection_resource_id = azurerm_mssql_server.sql.id
+    subresource_names              = ["sqlServer"]
+  }
+
+  private_dns_zone_group {
+    name                 = "sql-dns-zone-group"
+    private_dns_zone_ids = [azurerm_private_dns_zone.sql.id]
+  }
+}
+
+# -------------------------
+# DNS Zone Linking to All VNets
+# -------------------------
 resource "azurerm_private_dns_zone_virtual_network_link" "link_central" {
   name                  = "sql-dns-link-central"
-  resource_group_name   = azurerm_resource_group.example.name
+  resource_group_name   = var.resource_group_name
   private_dns_zone_name = azurerm_private_dns_zone.sql.name
   virtual_network_id    = azurerm_virtual_network.vnet_central.id
   registration_enabled  = false
@@ -350,37 +380,55 @@ resource "azurerm_private_dns_zone_virtual_network_link" "link_central" {
 
 resource "azurerm_private_dns_zone_virtual_network_link" "link_west" {
   name                  = "sql-dns-link-west"
-  resource_group_name   = azurerm_resource_group.example.name
+  resource_group_name   = var.resource_group_name
   private_dns_zone_name = azurerm_private_dns_zone.sql.name
   virtual_network_id    = azurerm_virtual_network.vnet_west.id
   registration_enabled  = false
 }
 
-
-resource "azurerm_private_endpoint" "sql_pe" {
-  count               = length(local.sql_pe_subnets)
-  name                = "sql-pe-${count.index + 1}"
-  location            = azurerm_resource_group.example.location
-  resource_group_name = azurerm_resource_group.example.name
-  subnet_id           = local.sql_pe_subnets[count.index].id
-
-  private_service_connection {
-    name                           = "sql-priv-conn-${count.index + 1}"
-    private_connection_resource_id = azurerm_mssql_server.sql.id
-    subresource_names              = ["sqlServer"]
-    is_manual_connection           = false
-  }
-
-  private_dns_zone_group {
-    name                 = "sql-dns-zone-group"
-    private_dns_zone_ids = [azurerm_private_dns_zone.sql.id]
-  }
-
-  depends_on = [
-    azurerm_mssql_server.sql,
-    azurerm_private_dns_zone.sql
-  ]
+resource "azurerm_private_dns_zone_virtual_network_link" "link_pe" {
+  name                  = "sql-dns-link-pe"
+  resource_group_name   = var.resource_group_name
+  private_dns_zone_name = azurerm_private_dns_zone.sql.name
+  virtual_network_id    = azurerm_virtual_network.pe_vnet.id
+  registration_enabled  = false
 }
+
+# -------------------------
+# VNet Peering (Central + West → PE VNet)
+# -------------------------
+resource "azurerm_virtual_network_peering" "central_to_pe" {
+  name                      = "central-to-pe"
+  resource_group_name       = var.resource_group_name
+  virtual_network_name      = azurerm_virtual_network.vnet_central.name
+  remote_virtual_network_id = azurerm_virtual_network.pe_vnet.id
+  allow_forwarded_traffic   = true
+}
+
+resource "azurerm_virtual_network_peering" "pe_to_central" {
+  name                      = "pe-to-central"
+  resource_group_name       = var.resource_group_name
+  virtual_network_name      = azurerm_virtual_network.pe_vnet.name
+  remote_virtual_network_id = azurerm_virtual_network.vnet_central.id
+  allow_forwarded_traffic   = true
+}
+
+resource "azurerm_virtual_network_peering" "west_to_pe" {
+  name                      = "west-to-pe"
+  resource_group_name       = var.resource_group_name
+  virtual_network_name      = azurerm_virtual_network.vnet_west.name
+  remote_virtual_network_id = azurerm_virtual_network.pe_vnet.id
+  allow_forwarded_traffic   = true
+}
+
+resource "azurerm_virtual_network_peering" "pe_to_west" {
+  name                      = "pe-to-west"
+  resource_group_name       = var.resource_group_name
+  virtual_network_name      = azurerm_virtual_network.pe_vnet.name
+  remote_virtual_network_id = azurerm_virtual_network.vnet_west.id
+  allow_forwarded_traffic   = true
+}
+
 
 
 
