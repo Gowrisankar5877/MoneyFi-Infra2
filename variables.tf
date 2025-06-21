@@ -9,3 +9,10 @@ variable "location" {
   type        = string
   default     = "centralindia"
 }
+
+
+variable "secondary_location" {
+  description = "The second region for the second VNet"
+  type        = string
+  default     = "japanwest"
+}
