@@ -183,3 +183,102 @@ resource "azurerm_subnet_network_security_group_association" "assoc_subnet2_west
   subnet_id                 = azurerm_subnet.subnet2_west.id
   network_security_group_id = azurerm_network_security_group.nsg_private_west.id
 }
+
+
+# ------------------------------------
+# AKS Cluster - Central India
+# ------------------------------------
+resource "azurerm_kubernetes_cluster" "aks_central" {
+  name                = "MoneyFi-AKS1"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.example.name
+  dns_prefix          = "akscentral"
+
+  default_node_pool {
+    name           = "np1"
+    node_count     = 2
+    vm_size        = "Standard_B2s"
+    vnet_subnet_id = azurerm_subnet.subnet1_central.id
+  }
+
+  identity {
+    type = "SystemAssigned"
+  }
+
+  private_cluster_enabled = true
+
+  network_profile {
+    network_plugin      = "azure"
+    network_policy      = "azure"
+    dns_service_ip      = "10.2.0.10"
+    service_cidr        = "10.2.0.0/24"
+    docker_bridge_cidr  = "172.17.0.1/16"
+  }
+
+  depends_on = [
+    azurerm_subnet_network_security_group_association.assoc_subnet1_central
+  ]
+}
+
+resource "azurerm_kubernetes_cluster_node_pool" "central_np2" {
+  name                  = "np2"
+  kubernetes_cluster_id = azurerm_kubernetes_cluster.aks_central.id
+  vm_size               = "Standard_B2s"
+  node_count            = 2
+  vnet_subnet_id        = azurerm_subnet.subnet2_central.id
+  mode                  = "User"
+  orchestrator_version  = azurerm_kubernetes_cluster.aks_central.kubernetes_version
+
+  depends_on = [
+    azurerm_subnet_network_security_group_association.assoc_subnet2_central
+  ]
+}
+
+# ------------------------------------
+# AKS Cluster - West India
+# ------------------------------------
+resource "azurerm_kubernetes_cluster" "aks_west" {
+  name                = "MoneyFi-aks2"
+  location            = var.secondary_location
+  resource_group_name = azurerm_resource_group.example.name
+  dns_prefix          = "akswest"
+
+  default_node_pool {
+    name           = "np1"
+    node_count     = 2
+    vm_size        = "Standard_B2s"
+    vnet_subnet_id = azurerm_subnet.subnet1_west.id
+  }
+
+  identity {
+    type = "SystemAssigned"
+  }
+
+  private_cluster_enabled = true
+
+  network_profile {
+    network_plugin      = "azure"
+    network_policy      = "azure"
+    dns_service_ip      = "10.3.0.10"
+    service_cidr        = "10.3.0.0/24"
+    docker_bridge_cidr  = "172.17.0.1/16"
+  }
+
+  depends_on = [
+    azurerm_subnet_network_security_group_association.assoc_subnet1_west
+  ]
+}
+
+resource "azurerm_kubernetes_cluster_node_pool" "west_np2" {
+  name                  = "np2"
+  kubernetes_cluster_id = azurerm_kubernetes_cluster.aks_west.id
+  vm_size               = "Standard_B2s"
+  node_count            = 2
+  vnet_subnet_id        = azurerm_subnet.subnet2_west.id
+  mode                  = "User"
+  orchestrator_version  = azurerm_kubernetes_cluster.aks_west.kubernetes_version
+
+  depends_on = [
+    azurerm_subnet_network_security_group_association.assoc_subnet2_west
+  ]
+}
