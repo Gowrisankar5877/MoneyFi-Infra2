@@ -64,7 +64,7 @@ stages:
           az aks enable-addons \
           --addons azure-keyvault-secrets-provider \
           --name $(aksCentralName) \
-          --resource-group $(resourceGroupName)
+          --resource-group $(resourceGroupName) || true
 
     - task: AzureCLI@2
       displayName: Enable CSI Driver on West AKS
@@ -76,7 +76,7 @@ stages:
           az aks enable-addons \
             --addons azure-keyvault-secrets-provider \
             --name $(aksWestName) \
-            --resource-group $(resourceGroupName)
+            --resource-group $(resourceGroupName) ||true
 
     - task: AzureCLI@2
       displayName: Get Credentials for Central AKS
@@ -88,7 +88,7 @@ stages:
           az aks get-credentials \
             --name $(aksCentralName) \
             --resource-group $(resourceGroupName) \
-            --admin --overwrite-existing
+            --admin --overwrite-existing 
 
     - script: |
         kubectl apply -f secretprovider.yaml
