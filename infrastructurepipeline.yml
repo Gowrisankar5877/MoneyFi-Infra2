@@ -109,5 +109,47 @@ stages:
     - script: |
         kubectl apply -f secretprovider.yml --validate=false
       displayName: Apply SecretProviderClass to West AKS
+      
+- stage: Configure_Jumpbox_AKS
+  displayName: "Configure AKS via Jumpbox"
+  dependsOn: Terraform_Infra
+  condition: succeeded()
+  jobs:
+  - job: SSH_Into_Jumpbox
+    displayName: "Install Tools & Apply SecretProvider via Jumpbox"
+    pool:
+      name: $(poolname)
+      vmImage: $(vmImageName)
+    steps:
+    - script: |
+        sudo apt-get update && sudo apt-get install -y sshpass
+
+        echo "Connecting to Jumpbox..."
+
+        sshpass -p "$(jumpboxPassword)" ssh -o StrictHostKeyChecking=no $(jumpboxUser)@$(jumpboxIP) << 'EOF'
+          echo "Installing Azure CLI..."
+          curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+
+          echo "Installing kubectl..."
+          curl -LO "https://dl.k8s.io/release/\$(curl -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+
+          echo "Logging into Azure using Managed Identity..."
+          az login --identity || az login
+
+          echo "Getting AKS Central credentials..."
+          az aks get-credentials --name MoneyFi-AKS1 --resource-group MoneyFi-RG --admin --overwrite-existing
+
+          echo "Applying SecretProviderClass to Central..."
+          kubectl apply -f secretprovider.yml --validate=false
+
+          echo "Getting AKS West credentials..."
+          az aks get-credentials --name MoneyFi-aks2 --resource-group MoneyFi-RG --admin --overwrite-existing
+
+          echo "Applying SecretProviderClass to West..."
+          kubectl apply -f secretprovider.yml --validate=false
+        EOF
+      displayName: "SSH and Configure AKS"
 
     
