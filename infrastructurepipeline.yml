@@ -125,14 +125,13 @@ stages:
         sudo apt-get update && sudo apt-get install -y sshpass
         echo "Copying secretprovider.yml to jumpbox..."
         sshpass -p '1qaz2wsx3edc!23' scp -o StrictHostKeyChecking=no secretprovider.yml azureuser@4.206.141.112:/home/azureuser/secretprovider.yml
-    displayName: "Copy secretprovider.yml to Jumpbox
+      displayName: "Copy secretprovider.yml to Jumpbox"
 
     - script: |
         sudo apt-get update && sudo apt-get install -y sshpass
 
         echo "Connecting to Jumpbox..."
-
-        sshpass -p "1qaz2wsx3edc!23" ssh -o StrictHostKeyChecking=no azureuser@4.206.141.112 << 'EOF'
+        sshpass -p "1qaz2wsx3edc!23" ssh -o StrictHostKeyChecking=no azureuser@4.206.141.112 '
           echo "Installing Azure CLI..."
           curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
 
@@ -141,8 +140,6 @@ stages:
           curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256"
           echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check
           sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-          chmod +x kubectl
-          sudo mv kubectl /usr/local/bin/
 
           echo "Logging into Azure using Managed Identity..."
           az login --identity || az login
@@ -158,7 +155,5 @@ stages:
 
           echo "Applying SecretProviderClass to West..."
           kubectl apply -f secretprovider.yml --validate=false
-        EOF
+        '
       displayName: "SSH and Configure AKS"
-
-    
