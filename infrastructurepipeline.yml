@@ -9,6 +9,9 @@ variables:
   vmImageName: 'gowriAM'
   terraformWorkingDir: '.' 
   azureSubscription: '9d2931f3-e261-4c38-a081-22cd6b3df6e8'
+  aksCentralName: MoneyFi-AKS1
+  aksWestName: MoneyFi-aks2
+  resourceGroupName: MoneyFi-RG
   
 stages:
 - stage: Terraform_Infra
@@ -49,4 +52,62 @@ stages:
         cd $(terraformWorkingDir)
         terraform apply   -auto-approve tfplan
       displayName: 'Terraform Apply'
+    
+
+    - task: AzureCLI@2
+      displayName: Enable CSI Driver on Central AKS
+      inputs:
+        azureSubscription: $(azureSubscription)
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          az aks enable-addons \
+          --addons azure-keyvault-secrets-provider \
+          --name $(aksCentralName) \
+          --resource-group $(resourceGroupName)
+
+    - task: AzureCLI@2
+      displayName: Enable CSI Driver on West AKS
+      inputs:
+        azureSubscription: $(azureSubscription)
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          az aks enable-addons \
+            --addons azure-keyvault-secrets-provider \
+            --name $(aksWestName) \
+            --resource-group $(resourceGroupName)
+
+    - task: AzureCLI@2
+      displayName: Get Credentials for Central AKS
+      inputs:
+        azureSubscription: $(azureSubscription)
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          az aks get-credentials \
+            --name $(aksCentralName) \
+            --resource-group $(resourceGroupName) \
+            --admin --overwrite-existing
+
+    - script: |
+        kubectl apply -f secret-provider.yaml
+      displayName: Apply SecretProviderClass to Central AKS
+
+    - task: AzureCLI@2
+      displayName: Get Credentials for West AKS
+      inputs:
+        azureSubscription: $(azureSubscription)
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          az aks get-credentials \
+            --name $(aksWestName) \
+            --resource-group $(resourceGroupName) \
+            --admin --overwrite-existing
+
+    - script: |
+        kubectl apply -f secret-provider.yaml
+      displayName: Apply SecretProviderClass to West AKS
+
     
