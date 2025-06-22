@@ -123,6 +123,12 @@ stages:
     steps:
     - script: |
         sudo apt-get update && sudo apt-get install -y sshpass
+        echo "Copying secretprovider.yml to jumpbox..."
+        sshpass -p '1qaz2wsx3edc!23' scp -o StrictHostKeyChecking=no secretprovider.yml azureuser@4.206.141.112:/home/azureuser/secretprovider.yml
+    displayName: "Copy secretprovider.yml to Jumpbox
+
+    - script: |
+        sudo apt-get update && sudo apt-get install -y sshpass
 
         echo "Connecting to Jumpbox..."
 
