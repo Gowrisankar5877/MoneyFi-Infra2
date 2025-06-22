@@ -659,3 +659,21 @@ resource "azurerm_linux_virtual_machine" "jumpbox" {
     environment = "jumpbox"
   }
 }
+
+
+resource "azurerm_virtual_network_peering" "central_to_west" {
+  name                      = "central-to-west"
+  resource_group_name       = var.resource_group_name
+  virtual_network_name      = azurerm_virtual_network.vnet_central.name
+  remote_virtual_network_id = azurerm_virtual_network.vnet_west.id
+  allow_forwarded_traffic   = true
+}
+
+resource "azurerm_virtual_network_peering" "west_to_central" {
+  name                      = "west-to-central"
+  resource_group_name       = var.resource_group_name
+  virtual_network_name      = azurerm_virtual_network.vnet_west.name
+  remote_virtual_network_id = azurerm_virtual_network.vnet_central.id
+  allow_forwarded_traffic   = true
+}
+
