@@ -68,3 +68,13 @@ variable "database_password" {
   type        = string
   sensitive   = true
 }
+
+
+variable "admin_username" {
+   default = "azureuser"
+ }
+
+ variable "admin_password" {
+   description = "Password for jumpbox login"
+   sensitive   = true
+ }
