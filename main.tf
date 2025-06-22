@@ -524,4 +524,120 @@ resource "azurerm_key_vault_access_policy" "aks_west_kv_access" {
   ]
 }
 
+# -------------------------
+# Jumpbox VM in Central VNet
+# -------------------------
 
+# Public IP for Jumpbox
+resource "azurerm_public_ip" "jumpbox_ip" {
+  name                = "jumpbox-public-ip"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.example.name
+  allocation_method   = "Static"
+  sku                 = "Standard"
+}
+
+# NIC for Jumpbox
+resource "azurerm_network_interface" "jumpbox_nic" {
+  name                = "jumpbox-nic"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.example.name
+
+  ip_configuration {
+    name                          = "internal"
+    subnet_id                     = azurerm_subnet.subnet1_central.id
+    private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = azurerm_public_ip.jumpbox_ip.id
+  }
+}
+
+# NSG for Jumpbox with SSH Access
+resource "azurerm_network_security_group" "jumpbox_nsg" {
+  name                = "jumpbox-nsg"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.example.name
+
+  security_rule {
+    name                       = "AllowSSHInbound"
+    priority                   = 100
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "22"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "AllowVNetInbound"
+    priority                   = 200
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "*"
+    source_port_range          = "*"
+    destination_port_range     = "*"
+    source_address_prefix      = "VirtualNetwork"
+    destination_address_prefix = "VirtualNetwork"
+  }
+
+  security_rule {
+    name                       = "DenyAllInbound"
+    priority                   = 300
+    direction                  = "Inbound"
+    access                     = "Deny"
+    protocol                   = "*"
+    source_port_range          = "*"
+    destination_port_range     = "*"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "AllowAllOutbound"
+    priority                   = 400
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "*"
+    source_port_range          = "*"
+    destination_port_range     = "*"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+}
+
+# Associate NSG with Jumpbox Subnet
+resource "azurerm_subnet_network_security_group_association" "jumpbox_nsg_assoc" {
+  subnet_id                 = azurerm_subnet.subnet1_central.id
+  network_security_group_id = azurerm_network_security_group.jumpbox_nsg.id
+}
+
+# Linux VM with username/password
+resource "azurerm_linux_virtual_machine" "jumpbox" {
+  name                = "jumpbox-vm"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.example.name
+  network_interface_ids = [
+    azurerm_network_interface.jumpbox_nic.id
+  ]
+  size                      = "Standard_B1s"
+  admin_username            = var.admin_username
+  admin_password            = var.admin_password
+  disable_password_authentication = false
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
+  }
+
+  source_image_reference {
+    publisher = "Canonical"
+    offer     = "0001-com-ubuntu-server-jammy"
+    sku       = "22_04-lts-gen2"
+    version   = "latest"
+  }
+
+  tags = {
+    environment = "jumpbox"
+  }
+}
