@@ -145,14 +145,17 @@ stages:
           az login --identity || az login
 
           echo "Getting AKS Central credentials..."
-          az aks get-credentials --name MoneyFi-AKS1 --resource-group MoneyFi-RG --admin --overwrite-existing
+          #az aks get-credentials --name MoneyFi-AKS1 --resource-group MoneyFi-RG --admin --overwrite-existing
+          az account set --subscription 1674f375-e996-4423-bd25-e0e8f6e76d13
+          az aks get-credentials --resource-group MoneyFi-RG --name MoneyFi-AKS1 --overwrite-existing
 
           echo "Applying SecretProviderClass to Central..."
           kubectl apply -f secretprovider.yml --validate=false
 
           echo "Getting AKS West credentials..."
-          az aks get-credentials --name MoneyFi-aks2 --resource-group MoneyFi-RG --admin --overwrite-existing
-
+          #az aks get-credentials --name MoneyFi-aks2 --resource-group MoneyFi-RG --admin --overwrite-existing
+          az account set --subscription 1674f375-e996-4423-bd25-e0e8f6e76d13
+          az aks get-credentials --resource-group MoneyFi-RG --name MoneyFi-aks2 --overwrite-existing
           echo "Applying SecretProviderClass to West..."
           kubectl apply -f secretprovider.yml --validate=false
         '
