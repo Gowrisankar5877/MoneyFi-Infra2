@@ -91,7 +91,7 @@ stages:
             --admin --overwrite-existing 
 
     - script: |
-        kubectl apply -f secretprovider.yaml
+        kubectl apply -f secretprovider.yml
       displayName: Apply SecretProviderClass to Central AKS
 
     - task: AzureCLI@2
@@ -107,7 +107,7 @@ stages:
             --admin --overwrite-existing
 
     - script: |
-        kubectl apply -f secretprovider.yaml
+        kubectl apply -f secretprovider.yml
       displayName: Apply SecretProviderClass to West AKS
 
     
