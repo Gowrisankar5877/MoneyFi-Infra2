@@ -160,3 +160,33 @@ stages:
           kubectl apply -f secretprovider.yml --validate=false
         '
       displayName: "SSH and Configure AKS"
+
+
+- stage: Execute_SQL_Script
+  displayName: "Execute SQL on Azure SQL DB"
+  dependsOn: Configure_Jumpbox_AKS
+  condition: succeeded()
+  jobs:
+  - job: Run_SQL_From_Jumpbox
+    displayName: "Run SQL Script on Azure SQL"
+    pool:
+      name: $(poolname)
+      vmImage: $(vmImageName)
+    steps:
+    - script: |
+        echo "Copying init_db.sql to jumpbox..."
+        sshpass -p '1qaz2wsx3edc!23' scp -o StrictHostKeyChecking=no init.sql azureuser@4.206.141.112:/home/azureuser/init.sql
+      displayName: "Copy SQL Script to Jumpbox"
+
+    - script: |
+        sshpass -p '1qaz2wsx3edc!23' ssh -o StrictHostKeyChecking=no azureuser@4.206.141.112 '
+          echo "Installing SQL tools..."
+          curl -s https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+          sudo apt-add-repository "$(curl -s https://packages.microsoft.com/config/ubuntu/22.04/prod.list)"
+          sudo apt-get update
+          sudo apt-get install -y mssql-tools unixodbc-dev
+
+          echo "Running SQL script..."
+          /opt/mssql-tools/bin/sqlcmd -S moneyfisqlserver.database.windows.net -d moneyfi_db -U gowri -P Pp@029833 -i init.sql
+        '
+      displayName: "Execute SQL from Jumpbox"
